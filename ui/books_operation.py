@@ -1,5 +1,5 @@
 from model.library_model import (add_book_db, get_all_books_db, borrow_book_db, return_book_db, search_by_name_db,
-                                 search_by_id_db)
+                                 search_by_id_db, delete_book_id_db)
 
 def add_book():
     """Get book name and author from user and call function to add it to the database."""
@@ -18,21 +18,36 @@ def add_book():
     except Exception as e:
         print(e)
 
-def borrow_book():
+def delete_book_id():
+    """Delete a book from the database by ID."""
+    try:
+        print(" -- Welcome to the delete book menu -- ")
+        print("-" * 50)
+        id = int(input("Enter the ID of the book you want to delete: "))
+        delete_book_id_db(id)
+        print("Book deleted successfully!")
+    except Exception as e:
+        print(f"Error deleting book: {e}")
+        return
+
+def borrow_book(user_id):
     """Borrow a book from the database."""
     print(" -- Welcome to the borrow book menu -- ")
     print("-" *40)
-    book_id = int(input("Enter the ID of the book you want to borrow: "))
-    borrow_book_db(book_id)
+    try:
+        book_id = int(input("Enter the ID of the book you want to borrow: "))
+        borrow_book_db(book_id, user_id)
+    except Exception as e:
+        print(f" Error borrowing book: {e}")
+        return
 
-
-def return_book():
+def return_book(user_id):
     """Return a borrowed book."""
     try:
         print(" -- Welcome to the return book menu -- ")
         print("-" *40)
         book_id = int(input("Enter the ID of the book you want to return: "))
-        return_book_db(book_id)
+        return_book_db(book_id, user_id)
     except Exception as e:
         print(f" Error returning book: {e}")
         return
@@ -49,7 +64,7 @@ def search_by_name():
     else:
         print("-" * 70)
         for book in books:
-            book_id, name, author, available = book
+            book_id, name, author, available, borrow_by = book
             status = " Available" if available else " Checked Out"
             print(f"ID: {book_id:2} | {name:<25} | {author:<20} | {status}")
         print("-" * 70)
@@ -64,7 +79,7 @@ def search_by_id():
     if not book:
         print("No book found with the given ID.")
     else:
-        book_id, name, author, available = book
+        book_id, name, author, available, borrow_by = book
         status = " Available" if available else " Checked Out"
         print(f"ID: {book_id:2} | {name:<25} | {author:<20} | {status}")
 
@@ -89,7 +104,7 @@ def view_books():
     """Display all books with proper formatting"""
     try:
         print("\n -- View All Books -- ")
-        print("=" * 70)
+        print("=" * 90)
 
         books = get_all_books_db()
 
@@ -97,11 +112,11 @@ def view_books():
             print(" No books found in the library.")
         else:
             for book in books:
-                book_id, name, author, available = book
+                book_id, name, author, available, borrow_by = book
                 status = " Available" if available else " Checked Out"
-                print(f"ID: {book_id:2} | {name:<25} | {author:<20} | {status}")
+                print(f"ID: {book_id:2} | {name:<25} | {author:<20} | {status:<20} | Borrowed by: {borrow_by}")
 
-        print("=" * 70)
+        print("=" * 90)
 
     except Exception as e:
         print(f" Error displaying books: {e}")

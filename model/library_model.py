@@ -1,4 +1,6 @@
 from db.connection import get_connection
+from db.connection import get_cursor
+
 
 
 def add_book_db(book_name, author):
@@ -11,6 +13,19 @@ def add_book_db(book_name, author):
                 conn.close()
     except Exception as e:
         print(f"Error adding book to database: {e}")
+
+def delete_book_db(book_id):
+    """Delete a book from the database"""
+    try:
+        with get_cursor as cur:
+            cur.execute("DELETE FROM books WHERE book_id = %s", (book_id,))
+            if cur.rowcount == 0:
+                print(f"Book not found with {book_id} in the database.")
+            else:
+                print(f"Book with ID {book_id} deleted successfully.")
+    except Exception as e:
+        raise ValueError(f"Error logging in: {e}")
+
 
 
 def get_all_books_db():
@@ -25,7 +40,7 @@ def get_all_books_db():
 
 
 
-def borrow_book_db(book_id):
+def borrow_book_db(book_id, user_id):
     """Borrow a book from the database"""
     try:
         with get_connection() as conn:
@@ -45,36 +60,52 @@ def borrow_book_db(book_id):
                     return
 
                 # Borrow it
-                cursor.execute("UPDATE books SET available = FALSE WHERE book_id = %s", (book_id,))
+                cursor.execute("UPDATE books SET available = FALSE, borrow_by = %s WHERE book_id = %s", (user_id, book_id))
                 conn.commit()
                 print("Book borrowed successfully!")
     except Exception as e:
         print(f"Error borrowing book: {e}")
 
 
-def return_book_db(book_id):
-    """Return a borrowed book"""
+def return_book_db(book_id, user_id):
+    """Return a borrowed book."""
     try:
         with get_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT available FROM books WHERE book_id = %s", (book_id,))
+                # Check if book exists and who borrowed it
+                cursor.execute("""
+                    SELECT available, borrow_by 
+                    FROM books 
+                    WHERE book_id = %s;
+                """, (book_id,))
                 book = cursor.fetchone()
 
                 if not book:
                     print("Book not found in the database.")
                     return
 
-                available = book[0]
+                available, borrowed_by = book
 
                 if available:
-                    print("Book is already returned.")
+                    print("This book is already available (not borrowed).")
                     return
 
-                cursor.execute("UPDATE books SET available = TRUE WHERE book_id = %s", (book_id,))
+                if borrowed_by != user_id:
+                    print("You cannot return this book because it was borrowed by another user.")
+                    return
+
+                # Mark as returned
+                cursor.execute("""
+                    UPDATE books
+                    SET available = TRUE, borrow_by = NULL
+                    WHERE book_id = %s;
+                """, (book_id,))
+
                 conn.commit()
                 print("Book returned successfully!")
     except Exception as e:
         print(f"Error returning book: {e}")
+
 
 def search_by_name_db(book_name):
     """Search for a book by name and display the results"""

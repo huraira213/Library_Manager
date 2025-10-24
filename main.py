@@ -1,10 +1,10 @@
-from db.connection import create_table
-from ui.manu import main_manu
+from db.connection import initialize_database
+from ui.manu import user_manu
 
 
 def main():
-    create_table()
-    main_manu()
+    initialize_database()
+    user_manu()
 
 
 if __name__ == '__main__':
